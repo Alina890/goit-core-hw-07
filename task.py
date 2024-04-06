@@ -30,6 +30,7 @@ class Birthday(Field):
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
 
+
 class Record:
     def __init__(self, name):
         self.name = Name(name)
@@ -62,6 +63,7 @@ class Record:
 
     def __str__(self):
         return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+
 
 class AddressBook(UserDict):
     def add_record(self, record):
@@ -141,6 +143,7 @@ def show_all(book: AddressBook):
         result.append("Список контактів порожній")
         return result
 
+
 @input_error
 def add_birthday(args, book: AddressBook):
     name, birthday = args
@@ -153,6 +156,7 @@ def add_birthday(args, book: AddressBook):
     else:
         return "Перевірте вірність введених даних"
        
+
 @input_error
 def show_birthday(args, book: AddressBook):
     name = args[0]
@@ -161,6 +165,7 @@ def show_birthday(args, book: AddressBook):
         return record.birthday
     else: 
         return "Користувача з таким іменем не знайдено, перевірте вірність введених даних"
+
 
 @input_error
 def birthdays(args, book: AddressBook):
