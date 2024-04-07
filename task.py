@@ -18,7 +18,7 @@ class Phone(Field):
     def __init__(self, value):
         if len(value) == 10 and value.isdigit():
             super().__init__(value)
-	    else:
+        else:
             raise ValueError("Phone not valid")
         
 
@@ -49,8 +49,8 @@ class Record:
             if p == phone:
                 p.value = new_phone
                 break
-            else:
-                 raise ValueError
+        else:
+            raise ValueError
 
     def find_phone(self, phone):
         for p in self.phones:
@@ -62,7 +62,7 @@ class Record:
         self.birthday = Birthday(birthday)
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday.value}"
 
 
 class AddressBook(UserDict):
@@ -84,7 +84,7 @@ class AddressBook(UserDict):
         return None
         
     def get_upcoming_birthdays(self, days=7):
-        uncoming_birthdays = []
+        upcoming_birthdays = []
         current_date = datetime.today().date()
         for record in self.data.values():
             if record.birthday:
@@ -92,8 +92,8 @@ class AddressBook(UserDict):
                 if current_date <= next_birthday <= current_date + timedelta(days=days):
                     if next_birthday.weekday() >= 5:
                         next_birthday += timedelta(days = 7 - next_birthday.weekday())
-            uncoming_birthdays.append(f"{record.name.value}: {next_birthday.strftime("%d,%m,%Y")}")
-        return uncoming_birthdays 
+            upcoming_birthdays.append(f"{record.name.value}: {next_birthday.strftime("%d,%m,%Y")}")
+        return upcoming_birthdays 
     
 
 def input_error(func):
@@ -121,13 +121,25 @@ def add_contact(args, book: AddressBook):
     if phone:
         record.add_phone(phone)
     return message
-     
+
+@input_error
+def change_contact(args, book: AddressBook):
+        name, new_phone = args
+        record = book.find(name)
+        if record:
+            if record.phones:
+                record.phones[0].value = new_phone
+            return "Contact updated." 
+        else:
+            return "Перевірте вірність введених даних"    
 
 @input_error
 def show_phone(args,book: AddressBook):
         name = args[0]
-        if name in book:
-            return (book[name])
+        record = book.find(name)
+        if record:
+            if record.phones:
+                return record.phones[0].value
         else: 
             return "Користувача з таким іменем не знайдено, перевірте вірність введених даних"
     
@@ -135,27 +147,25 @@ def show_phone(args,book: AddressBook):
 @input_error
 def show_all(book: AddressBook):
     result = []
-    if book:
-        for name, phone in book.items():
-            result.append(f"{name}: {phone}")
+    if len(book) > 0:
+        for record in book.values():
+            result.append(f"{record.name.value}: {'; '.join([p.value for p in record.phones])}")
         return result
     else:
         result.append("Список контактів порожній")
         return result
-
-
+    
 @input_error
 def add_birthday(args, book: AddressBook):
     name, birthday = args
     record = book.find(name)
     if record is None:
         record = Record(name)
-        book.add_record(record)
-        record.add_birthday(birthday) 
+        record.add_birthday(birthday)
+        book.add_record(record) 
         return "Birthday added."
     else:
         return "Перевірте вірність введених даних"
-       
 
 @input_error
 def show_birthday(args, book: AddressBook):
@@ -173,9 +183,8 @@ def birthdays(args, book: AddressBook):
     for record in book.values():
         if record.birthday:
             birthdays.append(f"{record.name.value}: {record.birthday}")
-        return birthdays
-    else:
-        birthdays.append("Список днів народжень порожній")
+        else:
+            birthdays.append("Список днів народжень порожній")
     return birthdays
     
 
@@ -199,21 +208,21 @@ def main():
         elif command == "add":
             print(add_contact(args, book))
         elif command == "change":
-            print(add_contact(args, book))
+            print(change_contact(args, book))
         elif command == "phone":
             print(show_phone(args,book))
         elif command == "all":
             contact_list = show_all(book)
             for contact in contact_list:
-                 print(contact)
+                print(contact)
         elif command == "add-birthday":
             print(add_birthday(args, book))
         elif command == "show-birthday":
             print(show_birthday(args,book))
         elif command == "birthdays":  
-            birthdays_list = birthdays(book)
+            birthdays_list = birthdays(args,book)
             for birthday in birthdays_list:
-                 print(birthday)  
+                print(birthday)  
         else:
             print("Invalid command.")
 
