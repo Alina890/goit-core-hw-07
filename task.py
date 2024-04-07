@@ -126,9 +126,8 @@ def add_contact(args, book: AddressBook):
 def change_contact(args, book: AddressBook):
         name, new_phone = args
         record = book.find(name)
-        if record:
-            if record.phones:
-                record.phones[0].value = new_phone
+        if record.phones:
+            record.phones[0].value = new_phone
             return "Contact updated." 
         else:
             return "Перевірте вірність введених даних"    
@@ -149,7 +148,7 @@ def show_all(book: AddressBook):
     result = []
     if len(book) > 0:
         for record in book.values():
-            result.append(f"{record.name.value}: {'; '.join([p.value for p in record.phones])}")
+            result.append(f"{record.name.value}: {'; '.join([p.value for p in record.phones])}, Birthday: {record.birthday.value if record.birthday else "No birthday"}")
         return result
     else:
         result.append("Список контактів порожній")
@@ -159,7 +158,10 @@ def show_all(book: AddressBook):
 def add_birthday(args, book: AddressBook):
     name, birthday = args
     record = book.find(name)
-    if record is None:
+    if record:
+        record.add_birthday(birthday) 
+        return "Birthday added."
+    elif record is None:
         record = Record(name)
         record.add_birthday(birthday)
         book.add_record(record) 
