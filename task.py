@@ -43,10 +43,18 @@ class Record:
     def remove_phone(self, phone):
         self.phones = [p for p in self.phones if p != phone]
 
+    # def change_phone(self, old_phone, new_phone):
+    #     for i, phone in self.phones:
+    #         if phone.value = old_phone:
+    #             self.phones[i] = Phone(new_phone)
+    #             break
+    #     else:
+    #         raise ValueError("Номер не знайдено")
+    
     def edit_phone(self, phone, new_phone):
         for p in self.phones:
             Phone(new_phone)
-            if p == phone:
+            if p.value == phone:
                 p.value = new_phone
                 break
         else:
@@ -62,7 +70,7 @@ class Record:
         self.birthday = Birthday(birthday)
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday.value}"
+        return '\n'.join(str(record) for record in self.data.values())
 
 
 class AddressBook(UserDict):
@@ -74,25 +82,17 @@ class AddressBook(UserDict):
 
     def delete(self, name):
         del self.data[name]
-    
-    def find_next_birthday(self, weekday):
-        for record in self.data.values():
-            if record.birthday:
-                next_birthday = record.birthday.replace(year=datetime.today().year)
-                if next_birthday.weekday() == weekday:
-                    return next_birthday
-        return None
         
     def get_upcoming_birthdays(self, days=7):
         upcoming_birthdays = []
         current_date = datetime.today().date()
-        for record in self.data.values():
+        next_week = current_date + timedelta(weeks=1)
+        next_year_week = current_date + timedelta(weeks=52)
+        for record in self.values():
             if record.birthday:
-                next_birthday = record.birthday.replace(year=current_date.year + 1)
-                if current_date <= next_birthday <= current_date + timedelta(days=days):
-                    if next_birthday.weekday() >= 5:
-                        next_birthday += timedelta(days = 7 - next_birthday.weekday())
-            upcoming_birthdays.append(f"{record.name.value}: {next_birthday.strftime("%d,%m,%Y")}")
+                next_birthday = record.birthday.date.replace(year=current_date.year)
+                if current_date <= next_birthday <= next_week or current_date <= next_birthday <= next_year_week:
+                    upcoming_birthdays.append(f"{record.name.value}: {next_birthday.strftime("%d,%m,%Y")}")
         return upcoming_birthdays 
     
 
@@ -107,7 +107,6 @@ def input_error(func):
         except IndexError:
             return "Enter user name"
     return inner
-
 
 @input_error
 def add_contact(args, book: AddressBook):
@@ -124,13 +123,13 @@ def add_contact(args, book: AddressBook):
 
 @input_error
 def change_contact(args, book: AddressBook):
-        name, new_phone = args
+        name, new_phone, old_phone = args
         record = book.find(name)
         if record.phones:
-            record.phones[0].value = new_phone
+            record.change_phone(old_phone, new_phone)
             return "Contact updated." 
         else:
-            return "Перевірте вірність введених даних"    
+            return "Користувача з таким іменем не знайдено, перевірте вірність введених даних"    
 
 @input_error
 def show_phone(args,book: AddressBook):
@@ -138,21 +137,20 @@ def show_phone(args,book: AddressBook):
         record = book.find(name)
         if record:
             if record.phones:
-                return record.phones[0].value
+                return "; ".join([str(phone) for phone in record.phones])
         else: 
             return "Користувача з таким іменем не знайдено, перевірте вірність введених даних"
     
-
 @input_error
 def show_all(book: AddressBook):
     result = []
     if len(book) > 0:
         for record in book.values():
-            result.append(f"{record.name.value}: {'; '.join([p.value for p in record.phones])}, Birthday: {record.birthday.value if record.birthday else "No birthday"}")
+            result.append(f"{record.name.value}: {'; '.join([p.value for p in record.phones])}; Birthday: {record.birthday.value if record.birthday else "No birthday"}")
         return result
     else:
-        result.append("Список контактів порожній")
-        return result
+        return book or "Список контактів порожній"
+        
     
 @input_error
 def add_birthday(args, book: AddressBook):
@@ -176,18 +174,15 @@ def show_birthday(args, book: AddressBook):
     if record and record.birthday:
         return record.birthday
     else: 
-        return "Користувача з таким іменем не знайдено, перевірте вірність введених даних"
-
+        return "Перевірте вірність введених даних та повторіть спробу"
 
 @input_error
 def birthdays(args, book: AddressBook):
-    birthdays = []
-    for record in book.values():
-        if record.birthday:
-            birthdays.append(f"{record.name.value}: {record.birthday}")
-        else:
-            birthdays.append("Список днів народжень порожній")
-    return birthdays
+    upcoming_birthdays = book.get_upcoming_birthdays()
+    if upcoming_birthdays:
+        return upcoming_birthdays
+    else:
+        return ["Немає користувачів, яких потрібно привітати на наступному тижні."]
     
 
 def parse_input(user_input):
