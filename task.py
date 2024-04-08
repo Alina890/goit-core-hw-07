@@ -42,14 +42,6 @@ class Record:
         
     def remove_phone(self, phone):
         self.phones = [p for p in self.phones if p != phone]
-
-    # def change_phone(self, old_phone, new_phone):
-    #     for i, phone in self.phones:
-    #         if phone.value = old_phone:
-    #             self.phones[i] = Phone(new_phone)
-    #             break
-    #     else:
-    #         raise ValueError("Номер не знайдено")
     
     def edit_phone(self, phone, new_phone):
         for p in self.phones:
@@ -123,13 +115,14 @@ def add_contact(args, book: AddressBook):
 
 @input_error
 def change_contact(args, book: AddressBook):
-        name, new_phone, old_phone = args
+        name, new_phone = args
         record = book.find(name)
-        if record.phones:
-            record.change_phone(old_phone, new_phone)
+        if record:
+            if record.phones:
+                record.phones[0].value = new_phone
             return "Contact updated." 
         else:
-            return "Користувача з таким іменем не знайдено, перевірте вірність введених даних"    
+            return "Перевірте вірність введених даних" 
 
 @input_error
 def show_phone(args,book: AddressBook):
