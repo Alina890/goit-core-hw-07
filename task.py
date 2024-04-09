@@ -43,14 +43,13 @@ class Record:
     def remove_phone(self, phone):
         self.phones = [p for p in self.phones if p != phone]
     
-    def edit_phone(self, phone, new_phone):
-        for p in self.phones:
-            Phone(new_phone)
-            if p.value == phone:
-                p.value = new_phone
-                break
+    def edit_phone(self, old_phone, new_phone):
+        for i, phone in enumerate(self.phones):
+            if str(phone) == old_phone:
+                self.phones[i].value = new_phone
+                break 
         else:
-            raise ValueError
+            raise ValueError("Номер не знайдено")
 
     def find_phone(self, phone):
         for p in self.phones:
@@ -74,17 +73,33 @@ class AddressBook(UserDict):
 
     def delete(self, name):
         del self.data[name]
+
+    def find_next_weekday(self, day,weekday: int):
+        days_ahead = weekday - day.weekday()
+        if days_ahead <= 0:
+            days_ahead += 7
+            next_weekday = day + timedelta(days = days_ahead)
+            if next_weekday.weekday() in [5,6]:
+                next_weekday = next_weekday + timedelta(days = (7 - next_weekday.weekday()))
+            return next_weekday
         
     def get_upcoming_birthdays(self, days=7):
         upcoming_birthdays = []
         current_date = datetime.today().date()
         next_week = current_date + timedelta(weeks=1)
-        next_year_week = current_date + timedelta(weeks=52)
         for record in self.values():
             if record.birthday:
                 next_birthday = record.birthday.date.replace(year=current_date.year)
-                if current_date <= next_birthday <= next_week or current_date <= next_birthday <= next_year_week:
+                if current_date <= next_birthday <= next_week:
+                    if next_birthday.weekday() in [5,6]:
+                        next_birthday = self.find_next_weekday(next_birthday, 0)
                     upcoming_birthdays.append(f"{record.name.value}: {next_birthday.strftime("%d,%m,%Y")}")
+                elif current_date > next_birthday:
+                    next_birthday = record.birthday.date.replace(year=current_date.year + 1)
+                    if current_date <= next_birthday <= next_week:
+                        if next_birthday.weekday() in [5,6]:
+                            next_birthday = self.find_next_weekday(next_birthday, 0)
+                        upcoming_birthdays.append(f"{record.name.value}: {next_birthday.strftime("%d,%m,%Y")}")
         return upcoming_birthdays 
     
 
@@ -115,11 +130,10 @@ def add_contact(args, book: AddressBook):
 
 @input_error
 def change_contact(args, book: AddressBook):
-        name, new_phone = args
+        name, old_phone, new_phone = args
         record = book.find(name)
         if record:
-            if record.phones:
-                record.phones[0].value = new_phone
+            record.edit_phone(old_phone, new_phone)
             return "Contact updated." 
         else:
             return "Перевірте вірність введених даних" 
